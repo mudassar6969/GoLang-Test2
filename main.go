@@ -9,6 +9,7 @@ import (
 
 func main() {
 	fmt.Println("Starting assignment2")
+	fmt.Println("running server")
 
 	app := controllers.App{}
 	app.Initialize()

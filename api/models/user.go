@@ -77,7 +77,7 @@ func HashPassword(password string) (string, error) {
 	return string(bytes), err
 }
 
-func (u *User) BeforeSave() error {
+func (u *User) BeforeSave(db *gorm.DB) error {
 	password := strings.TrimSpace(u.Password)
 	hashedpassword, err := HashPassword(password)
 	if err != nil {
