@@ -27,7 +27,7 @@ func AuthJwtVerify(next http.Handler) http.Handler {
 		}
 
 		token, err := jwt.Parse(header, func(t *jwt.Token) (interface{}, error) {
-			return utils.SECRET_KEY, nil
+			return utils.GetSecretKey(), nil
 		})
 
 		if err != nil {

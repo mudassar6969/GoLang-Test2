@@ -1,12 +1,15 @@
 package utils
 
 import (
+	"os"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
 )
 
-var SECRET_KEY = []byte("MySecretKey")
+func GetSecretKey() []byte {
+	return []byte(os.Getenv("SECRET_KEY"))
+}
 
 func EncodeAuthToken(uid uint) (string, error) {
 	claims := jwt.MapClaims{}
@@ -14,5 +17,5 @@ func EncodeAuthToken(uid uint) (string, error) {
 	claims["IssuedAt"] = time.Now().Unix()
 	claims["ExpiresAt"] = time.Now().Add(time.Hour * 24).Unix()
 	token := jwt.NewWithClaims(jwt.GetSigningMethod("HS256"), claims)
-	return token.SignedString(SECRET_KEY)
+	return token.SignedString(GetSecretKey())
 }

@@ -5,8 +5,11 @@ import (
 	"assignment2/api/responses"
 	"assignment2/api/utils"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/smtp"
+	"os"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -117,4 +120,81 @@ func (a *App) UpdateTask(w http.ResponseWriter, request *http.Request) {
 	}
 	responses.JSON(w, http.StatusOK, resp)
 	return
+}
+
+func (a *App) AssignTaskToUser(rw http.ResponseWriter, request *http.Request) {
+	resp := map[string]interface{}{"status": "success", "message": "Task assigned successfully"}
+
+	body, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		responses.ERROR(rw, http.StatusBadRequest, err)
+		return
+	}
+	assignTask := models.AssignTask{}
+	err = json.Unmarshal(body, &assignTask)
+	if err != nil {
+		responses.ERROR(rw, http.StatusBadRequest, err)
+		return
+	}
+
+	savedUser := models.GetUserByEmail(assignTask.Email, a.DB)
+	if savedUser != nil {
+		// user exists in the database, now assign the task to the user
+		task := assignTask.TaskObj
+		task.UserID = savedUser.ID
+
+		_, err := task.SaveTask(a.DB)
+		if err != nil {
+			responses.ERROR(rw, http.StatusBadRequest, err)
+			return
+		}
+		responses.JSON(rw, http.StatusOK, resp)
+		return
+	}
+
+	// Now create a dummy user and assign the task to the dummy user
+	savedUser = &models.User{}
+	savedUser.Email = assignTask.Email
+	savedUser.Dummy = true
+	_, err = savedUser.SaveUser(a.DB)
+	if err != nil {
+		responses.ERROR(rw, http.StatusBadRequest, err)
+		return
+	}
+	resp["message"] = "User is not registered, please ask the user to signup"
+	responses.JSON(rw, http.StatusOK, resp)
+
+	SendEmailToUser(assignTask.Email)
+	return
+
+}
+
+func SendEmailToUser(email string) {
+
+	// Sender data.
+	from := os.Getenv("EMAIL")
+	password := os.Getenv("PASSWORD")
+
+	// Receiver email address.
+	to := []string{
+		email,
+	}
+
+	// smtp server configuration.
+	smtpHost := "smtp.gmail.com"
+	smtpPort := "587"
+
+	// Message.
+	message := []byte("You have been invited to create an account")
+
+	// Authentication.
+	auth := smtp.PlainAuth("", from, password, smtpHost)
+
+	// Sending email.
+	err := smtp.SendMail(smtpHost+":"+smtpPort, auth, from, to, message)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println("Email Sent Successfully!")
 }

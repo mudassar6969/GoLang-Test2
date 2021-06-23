@@ -15,6 +15,7 @@ type User struct {
 	FirstName string `gorm:"size:100;not null"              json:"firstname"`
 	LastName  string `gorm:"size:100;not null"              json:"lastname"`
 	Password  string `gorm:"size:100;not null"              json:"password"`
+	Dummy     bool   `gorm:"default:false"`
 }
 
 func (u *User) GetUser(db *gorm.DB) (*User, error) {
@@ -93,4 +94,19 @@ func CheckPasswordHash(password, hash string) error {
 		return errors.New("password incorrect")
 	}
 	return nil
+}
+
+func GetUserByEmail(email string, db *gorm.DB) *User {
+
+	user := &User{}
+	err := db.Table("users").Where("email = ?", email).First(user).Error
+	if err != nil {
+		return nil
+	}
+	return user
+}
+
+func (u *User) UpdateUser(db *gorm.DB) error {
+	err := db.Model(&u).Updates(map[string]interface{}{"first_name": u.FirstName, "last_name": u.LastName, "password": u.Password, "dummy": false}).Error
+	return err
 }

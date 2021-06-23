@@ -8,10 +8,15 @@ import (
 
 type Task struct {
 	gorm.Model
-	Title       string `gorm:"size:100;not null;unique" json:"title"`
+	Title       string `gorm:"size:100;not null" json:"title"`
 	Description string `gorm:"not null"                 json:"description"`
 	CreatedBy   User   `gorm:"foreignKey:UserID;"       json:"-"`
 	UserID      uint   `gorm:"not null"                 json:"user_id"`
+}
+
+type AssignTask struct {
+	Email   string `json:"email"`
+	TaskObj Task   `json:"task"`
 }
 
 const TABLE_TASKS = "tasks"

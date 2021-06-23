@@ -5,6 +5,7 @@ import (
 	"assignment2/api/models"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gorilla/mux"
 	"gorm.io/driver/postgres"
@@ -18,7 +19,8 @@ type App struct {
 
 func (a *App) Initialize() {
 	var err error
-	connStr := "user=mudassarraza dbname=testdb sslmode=disabled"
+	//connStr := "user=mudassarraza dbname=testdb sslmode=disabled"
+	connStr := fmt.Sprintf("user=%s dbname=%s sslmode=disabled", os.Getenv("DB_USER"), os.Getenv("DB_NAME"))
 	a.DB, err = gorm.Open(postgres.Open(connStr), &gorm.Config{})
 
 	if err != nil {
@@ -45,6 +47,7 @@ func (a *App) InitializeRoutes() {
 	subRouter.HandleFunc("/task", a.GetTasks).Methods("GET")
 	subRouter.HandleFunc("/task/{id}", a.DeleteTask).Methods("DELETE")
 	subRouter.HandleFunc("/task/{id}", a.UpdateTask).Methods("PUT")
+	subRouter.HandleFunc("/task/assign", a.AssignTaskToUser).Methods("POST")
 }
 
 func (a *App) RunServer() {

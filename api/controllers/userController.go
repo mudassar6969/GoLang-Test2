@@ -31,15 +31,33 @@ func (a *App) RegisterUser(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	savedUser, _ := user.GetUser(a.DB)
+	savedUser := models.GetUserByEmail(user.Email, a.DB)
 
 	if savedUser != nil {
+
+		if savedUser.Dummy == true {
+			savedUser.Dummy = false
+			savedUser.FirstName = user.FirstName
+			savedUser.LastName = user.LastName
+			hasPassword, _ := models.HashPassword(user.Password)
+			savedUser.Password = hasPassword
+			err = savedUser.UpdateUser(a.DB)
+			if err != nil {
+				responses.ERROR(w, http.StatusBadRequest, err)
+				return
+			}
+			resp["user"] = savedUser
+			responses.JSON(w, http.StatusOK, resp)
+			return
+		}
+
 		resp["status"] = "failed"
 		resp["message"] = "User already registered, please login"
 		responses.JSON(w, http.StatusBadRequest, resp)
 		return
 	}
 
+	user.Dummy = false
 	userCreated, err := user.SaveUser(a.DB)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
@@ -71,7 +89,7 @@ func (a *App) LoginUser(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	savedUser, _ := user.GetUser(a.DB)
+	savedUser := models.GetUserByEmail(user.Email, a.DB)
 
 	if savedUser == nil {
 		resp["status"] = "failed"
@@ -96,6 +114,7 @@ func (a *App) LoginUser(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 	resp["token"] = token
+	resp["user"] = savedUser
 	responses.JSON(w, http.StatusOK, resp)
 	return
 }
