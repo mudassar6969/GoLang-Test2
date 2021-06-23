@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"assignment2/api/middlewares"
 	"assignment2/api/models"
 	"fmt"
 	"net/http"
@@ -33,12 +34,17 @@ func (a *App) Initialize() {
 
 func (a *App) InitializeRoutes() {
 
+	a.Router.Use(middlewares.SetContentTypeMiddleware)
 	a.Router.HandleFunc("/register", a.RegisterUser).Methods("POST")
 	a.Router.HandleFunc("/login", a.LoginUser).Methods("POST")
-	a.Router.HandleFunc("/task", a.AddTask).Methods("POST")
-	a.Router.HandleFunc("/task", a.GetTasks).Methods("GET")
-	a.Router.HandleFunc("/task/{id}", a.DeleteTask).Methods("DELETE")
-	a.Router.HandleFunc("/task/{id}", a.UpdateTask).Methods("PUT")
+
+	subRouter := a.Router.PathPrefix("/api").Subrouter()
+	subRouter.Use(middlewares.AuthJwtVerify)
+
+	subRouter.HandleFunc("/task", a.AddTask).Methods("POST")
+	subRouter.HandleFunc("/task", a.GetTasks).Methods("GET")
+	subRouter.HandleFunc("/task/{id}", a.DeleteTask).Methods("DELETE")
+	subRouter.HandleFunc("/task/{id}", a.UpdateTask).Methods("PUT")
 }
 
 func (a *App) RunServer() {

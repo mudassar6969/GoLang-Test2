@@ -3,6 +3,7 @@ package controllers
 import (
 	"assignment2/api/models"
 	"assignment2/api/responses"
+	"assignment2/api/utils"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
@@ -41,7 +42,8 @@ func (a *App) AddTask(w http.ResponseWriter, request *http.Request) {
 		return
 	}
 
-	task.UserID = uint(9)
+	userID := request.Context().Value(utils.KEY_USER_ID).(float64)
+	task.UserID = uint(userID)
 	savedTask, err = task.SaveTask(a.DB)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
@@ -53,7 +55,8 @@ func (a *App) AddTask(w http.ResponseWriter, request *http.Request) {
 }
 
 func (a *App) GetTasks(w http.ResponseWriter, request *http.Request) {
-	tasks, err := models.GetUserTasks(9, a.DB)
+	userID := request.Context().Value(utils.KEY_USER_ID).(float64)
+	tasks, err := models.GetUserTasks(int(userID), a.DB)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
@@ -65,7 +68,7 @@ func (a *App) GetTasks(w http.ResponseWriter, request *http.Request) {
 func (a *App) DeleteTask(w http.ResponseWriter, request *http.Request) {
 	var resp = map[string]interface{}{"status": "success", "message": "Task deleted successfully"}
 	vars := mux.Vars(request)
-	userID := 9
+	userID := int(request.Context().Value(utils.KEY_USER_ID).(float64))
 
 	id, _ := strconv.Atoi(vars["id"])
 
@@ -88,8 +91,8 @@ func (a *App) UpdateTask(w http.ResponseWriter, request *http.Request) {
 	var resp = map[string]interface{}{"status": "success", "message": "Task updated successfully"}
 	vars := mux.Vars(request)
 	taskID, _ := strconv.Atoi(vars["id"])
-	userID := 9
-	_, err := models.GetTaskByID(taskID, userID, a.DB)
+	userID := request.Context().Value(utils.KEY_USER_ID).(float64)
+	_, err := models.GetTaskByID(taskID, int(userID), a.DB)
 	if err != nil {
 		responses.ERROR(w, http.StatusBadRequest, err)
 		return
